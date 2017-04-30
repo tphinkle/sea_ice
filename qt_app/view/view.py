@@ -18,8 +18,14 @@ import pyqtgraph as pg
 class GlobePlot(matplotlib.backends.backend_qt4agg.FigureCanvas):
     def __init__(self, parent=None):
 
-        self.fig = plt.figure(figsize=(3,3), dpi = 50)
+        self.fig = plt.figure(figsize=(3,3), dpi = 10)
         self.axes = self.fig.add_subplot(111)
+
+        self.patches = {'west_greenland': None,\
+            'bering': None,\
+            'severny': None,\
+            'hudson': None,\
+            'custom': None}
 
         matplotlib.backends.backend_qt4agg.FigureCanvas.__init__(self, self.fig)
         self.setParent(parent)
@@ -31,9 +37,17 @@ class GlobePlot(matplotlib.backends.backend_qt4agg.FigureCanvas):
 
         self.setup_map()
 
-        self.width, self.height = self.get_width_height()
+        self.width, self.height = 565, 565
 
         self.plot_all_roi_patches()
+
+
+
+
+
+
+
+
 
 
     def setup_map(self):
@@ -45,20 +59,28 @@ class GlobePlot(matplotlib.backends.backend_qt4agg.FigureCanvas):
 
         self.im1 = None
 
-        self.map.drawparallels(np.arange(50.,90.,10.), labels=[0,0,0,0],zorder=50, color='grey', linewidth=0.8)
-        self.map.drawmeridians(np.arange(-180.,181.,20.),latmax=90, labels=[0,0,0,0],zorder=50,color='grey', linewidth=0.8)
-        self.map.drawcoastlines(linewidth=0.3)
-        self.map.fillcontinents(color='chocolate',lake_color='lightblue', alpha=0.7, zorder=20)
-        self.map.drawmapboundary(fill_color='brown', linewidth=0.1)
+        self.map.drawparallels(np.arange(50.,90.,10.), labels=[0,0,0,0],zorder=50, color='grey', linewidth=5)
+        self.map.drawmeridians(np.arange(-180.,181.,20.),latmax=90, labels=[0,0,0,0],zorder=50,color='grey', linewidth=5)
+        self.map.drawcoastlines(linewidth=1)
+        self.map.fillcontinents(color='chocolate',lake_color='lightblue', alpha=1, zorder=20)
+        self.map.drawmapboundary(fill_color='brown', linewidth=1)
 
 
 
     def get_figure_coordinates(self, coords):
         xpt, ypt = self.map(coords[0], coords[1])
 
-        xy_pixels = self.axes.transData.transform(np.vstack([xpt,ypt]).T)[0]
 
-        return xy_pixels[0], self.height - xy_pixels[1]
+        xy_pixels = self.axes.transData.transform([xpt,ypt])
+        #xy_pixels = self.fig.transFigure.transform()
+
+        #xy_pixels = self.fig.transFigure.inverted().transform(xy_pixels)
+
+        fig_x = xy_pixels[0]
+        fig_y = self.height - xy_pixels[1]
+
+
+        return fig_x, fig_y
 
 
 
@@ -79,50 +101,58 @@ class GlobePlot(matplotlib.backends.backend_qt4agg.FigureCanvas):
         self.fig.tight_layout()
         self.draw()
 
-    def plot_roi_patch(self, latmin,latmax,lonmin,lonmax, map):
+    def plot_roi_patch(self, roi_name, latmin, latmax, lonmin, lonmax):
 
-        x1,y1 = map(lonmax, latmax)   # lon_max, lat_max
-        x2,y2 = map(lonmax, latmin)   # lon_max, lat_min
-        xmid1, ymid1 = map( (lonmax+lonmin)/2, latmin  )
-        x3,y3 = map(lonmin, latmin)   # lon_min, lat_min
-        x4,y4 = map(lonmin, latmax)  # lon_min, lat_max
-        xmid2, ymid2 = map( (lonmax+lonmin)/2, latmax  )
+        x1,y1 = self.map(lonmax, latmax)   # lon_max, lat_max
+        x2,y2 = self.map(lonmax, latmin)   # lon_max, lat_min
+        xmid1, ymid1 = self.map( (lonmax+lonmin)/2, latmin  )
+        x3,y3 = self.map(lonmin, latmin)   # lon_min, lat_min
+        x4,y4 = self.map(lonmin, latmax)  # lon_min, lat_max
+        xmid2, ymid2 = self.map( (lonmax+lonmin)/2, latmax  )
 
         boundary=[]
         boundary.append([x1,y1])
         boundary.append([x2,y2])
 
         for n in range((lonmax-lonmin)*3):
-            xx,yy = map(lonmax-(n+1)/3., latmin)
+            xx,yy = self.map(lonmax-(n+1)/3., latmin)
             boundary.append([xx,yy])
 
         boundary.append([x3,y3])
         boundary.append([x4,y4])
 
         for n in range((lonmax-lonmin)*3):
-            xx,yy = map(lonmin+(n+1)/3., latmax)
+            xx,yy = self.map(lonmin+(n+1)/3., latmax)
             boundary.append([xx,yy])
 
-        p = Polygon(boundary,
+        if self.patches[roi_name]:
+            self.patches[roi_name].remove()
+
+        self.patches[roi_name] = Polygon(boundary,
             facecolor='yellow', edgecolor='yellow',linewidth = 6, zorder = 1000, alpha = 0.35, ls = '-')
-        plt.gca().add_patch(p)
+        plt.gca().add_patch(self.patches[roi_name])
+
 
     def plot_all_roi_patches(self):
         # West greenland
         latmin, latmax= 66,75
         lonmin, lonmax= 290,310 #220,240
-        self.plot_roi_patch(latmin,latmax,lonmin,lonmax, self.map)
+        self.plot_roi_patch('west_greenland', latmin,latmax,lonmin,lonmax)
 
         # Hudson Bay
         latmin, latmax= 55,65
         lonmin, lonmax= 265,285
-        self.plot_roi_patch(latmin,latmax,lonmin,lonmax, self.map)
+        self.plot_roi_patch('hudson', latmin,latmax,lonmin,lonmax)
 
         # Bering Strait
         latmin, latmax= 63,70
         lonmin, lonmax= 180,199
-        self.plot_roi_patch(latmin,latmax,lonmin,lonmax, self.map)
+        self.plot_roi_patch('bering', latmin,latmax,lonmin,lonmax)
 
+        # Severny
+        latmin, latmax = 70, 80
+        lonmin, lonmax = 50, 75
+        self.plot_roi_patch('severny', latmin, latmax, lonmin, lonmax)
 
 class View(PyQt4.QtGui.QMainWindow):
     def __init__(self, parent = None):
@@ -140,6 +170,7 @@ class View(PyQt4.QtGui.QMainWindow):
         self.setup_globe_plot()
         self.setup_stats_plot()
         self.setup_loc_buttons()
+        self.setup_roi_sliders()
 
         self.globe_plot.get_figure_coordinates([0,0])
 
@@ -147,14 +178,72 @@ class View(PyQt4.QtGui.QMainWindow):
 
 
 
+        self.setup_roi_sliders()
 
+
+
+    def setup_roi_sliders(self):
+        self.roi_lat0_slider = PyQt4.QtGui.QSlider(parent = self, orientation = PyQt4.QtCore.Qt.Horizontal)
+        self.roi_lat0_slider.setGeometry(715,150,250,50)
+        self.roi_lat0_slider.setMinimum(40)
+        self.roi_lat0_slider.setMaximum(90)
+        self.roi_lat0_slider.show()
+
+
+        self.roi_long0_slider = PyQt4.QtGui.QSlider(parent = self, orientation = PyQt4.QtCore.Qt.Horizontal)
+        self.roi_long0_slider.setGeometry(715,100,250,50)
+        self.roi_long0_slider.setMinimum(0)
+        self.roi_long0_slider.setMaximum(360) # Total data points
+        self.roi_long0_slider.show()
+
+        self.roi_lat1_slider = PyQt4.QtGui.QSlider(parent = self, orientation = PyQt4.QtCore.Qt.Horizontal)
+        self.roi_lat1_slider.setGeometry(980,150,250,50)
+        self.roi_lat1_slider.setMinimum(40)
+        self.roi_lat1_slider.setMaximum(90)
+        self.roi_lat1_slider.show()
+
+
+        self.roi_long1_slider = PyQt4.QtGui.QSlider(parent = self, orientation = PyQt4.QtCore.Qt.Horizontal)
+        self.roi_long1_slider.setGeometry(980,100,250,50)
+        self.roi_long1_slider.setMinimum(0)
+        self.roi_long1_slider.setMaximum(360) # Total data points
+        self.roi_long1_slider.show()
+
+        self.roi_lat_lineedit = PyQt4.QtGui.QLineEdit('LAT', parent = self)
+        self.roi_lat_lineedit.setGeometry(665,150,50,65)
+        self.roi_lat_lineedit.show()
+
+        self.roi_long_lineedit = PyQt4.QtGui.QLineEdit('LONG', parent = self)
+        self.roi_long_lineedit.setGeometry(665,100,50,65)
+        self.roi_long_lineedit.show()
+
+        self.active_roi_lineedit = PyQt4.QtGui.QLineEdit('', parent = self)
+        self.active_roi_lineedit.setGeometry(665,50,200,65)
+        self.active_roi_lineedit.show()
+
+        for le in [self.roi_long_lineedit, self.roi_lat_lineedit, self.active_roi_lineedit]:
+            le.setStyleSheet("""
+            .QLineEdit {
+                border: 0px solid black;
+                border-radius: 10px;
+                background-color: rgba(255, 255, 255, 0);
+                }
+                """)
 
 
 
     def set_defaults(self):
         # Time
-        self.time_year_lineedit.setText('1850')
-        self.time_month_lineedit.setText('Jan')
+
+        self.severny_loc_button.clicked.emit(True)
+
+
+        self.time_month_slider.setSliderPosition(3)
+        self.time_month_slider.sliderReleased.emit(True)
+
+
+        self.time_year_slider.setSliderPosition(1950)
+        self.time_year_slider.sliderReleased.emit(True)
 
 
 
@@ -229,10 +318,15 @@ class View(PyQt4.QtGui.QMainWindow):
         pen_0 = PyQt4.QtGui.QPen(PyQt4.QtGui.QColor(200,200,200))
         pen_1 = PyQt4.QtGui.QPen(PyQt4.QtGui.QColor(200,50,75))
 
-        self.stats_plot_item_roi = pg.PlotDataItem()
-        self.stats_plot_item_roi.setPen(pen_0)
+        self.stats_plot_item_roi_mar = pg.PlotDataItem()
+        self.stats_plot_item_roi_mar.setPen(pen_0)
 
-        self.stats_plot.addItem(self.stats_plot_item_roi)
+        self.stats_plot.addItem(self.stats_plot_item_roi_mar)
+
+        self.stats_plot_item_roi_sep = pg.PlotDataItem()
+        self.stats_plot_item_roi_sep.setPen(pen_0)
+
+        self.stats_plot.addItem(self.stats_plot_item_roi_sep)
 
         self.stats_plot_item_full = pg.PlotDataItem()
         self.stats_plot_item_full.setPen(pen_1)
@@ -244,17 +338,17 @@ class View(PyQt4.QtGui.QMainWindow):
 
 
     def setup_loc_buttons(self):
-        # Greenland
-        self.greenland_loc_button = PyQt4.QtGui.QPushButton('X', self)
-        self.greenland_loc_button.setStyleSheet('''
+        # West greenland
+        self.west_greenland_loc_button = PyQt4.QtGui.QPushButton('X', self)
+        self.west_greenland_loc_button.setStyleSheet('''
                             background-color: rgba(255,255,255,0);
                             color: green
                             ''' )
-        self.greenland_loc_button.setFont(PyQt4.QtGui.QFont("Arial", 20, PyQt4.QtGui.QFont.Bold))
-        self.greenland_loc_button.setMaximumWidth(30)
-        self.greenland_loc_button.setMaximumHeight(30)
+        self.west_greenland_loc_button.setFont(PyQt4.QtGui.QFont("Arial", 20, PyQt4.QtGui.QFont.Bold))
+        self.west_greenland_loc_button.setMaximumWidth(30)
+        self.west_greenland_loc_button.setMaximumHeight(30)
 
-        self.greenland_loc_button.show()
+        self.west_greenland_loc_button.show()
 
 
 
@@ -269,3 +363,27 @@ class View(PyQt4.QtGui.QMainWindow):
         self.bering_loc_button.setMaximumHeight(30)
 
         self.bering_loc_button.show()
+
+        # Hudson
+        self.hudson_loc_button = PyQt4.QtGui.QPushButton('X', self)
+        self.hudson_loc_button.setStyleSheet('''
+                            background-color: rgba(255,255,255,0);
+                            color: green
+                            ''' )
+        self.hudson_loc_button.setFont(PyQt4.QtGui.QFont("Arial", 20, PyQt4.QtGui.QFont.Bold))
+        self.hudson_loc_button.setMaximumWidth(30)
+        self.hudson_loc_button.setMaximumHeight(30)
+
+        self.hudson_loc_button.show()
+
+        # Severny
+        self.severny_loc_button = PyQt4.QtGui.QPushButton('X', self)
+        self.severny_loc_button.setStyleSheet('''
+                            background-color: rgba(255,255,255,0);
+                            color: green
+                            ''' )
+        self.severny_loc_button.setFont(PyQt4.QtGui.QFont("Arial", 20, PyQt4.QtGui.QFont.Bold))
+        self.severny_loc_button.setMaximumWidth(30)
+        self.severny_loc_button.setMaximumHeight(30)
+
+        self.severny_loc_button.show()
