@@ -145,7 +145,7 @@ class Controller():
         roi = self.model.rois[roi_name]
         if roi_name == 'custom':
             roi_name = roi[0]+':'+roi[1]+','+roi[2]+':'+roi[3]
-        self.view.active_roi_lineedit.setText(roi_name)
+        self.view.active_roi_lineedit.setText('roi: ' + roi_name)
 
         self.view.roi_lat0_slider.setValue(roi[0])
         self.view.roi_lat1_slider.setValue(roi[1])

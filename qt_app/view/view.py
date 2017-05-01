@@ -171,6 +171,7 @@ class View(PyQt4.QtGui.QMainWindow):
         self.setup_stats_plot()
         self.setup_loc_buttons()
         self.setup_roi_sliders()
+        self.setup_conc_labels()
 
         self.globe_plot.get_figure_coordinates([0,0])
 
@@ -179,6 +180,45 @@ class View(PyQt4.QtGui.QMainWindow):
 
 
         self.setup_roi_sliders()
+
+
+    def setup_conc_labels(self):
+        self.conc_0_lineedit = PyQt4.QtGui.QLineEdit('0', parent = self)
+        self.conc_0_lineedit.setGeometry(50,800,50,55)
+        self.conc_0_lineedit.setStyleSheet("""
+            .QLineEdit {
+                border: 0px solid black;
+                border-radius: 10px;
+                background-color: rgba(0, 0, 255, 0);
+                }
+                """)
+        self.conc_0_lineedit.show()
+
+        self.conc_50_lineedit = PyQt4.QtGui.QLineEdit('50', parent = self)
+        self.conc_50_lineedit.setGeometry(50+565/2,800,50,55)
+        self.conc_50_lineedit.setStyleSheet("""
+            .QLineEdit {
+                border: 0px solid black;
+                border-radius: 10px;
+                background-color: rgba(255, 255, 255, 0);
+                }
+                """)
+        self.conc_50_lineedit.show()
+
+        self.conc_100_lineedit = PyQt4.QtGui.QLineEdit('100', parent = self)
+        self.conc_100_lineedit.setGeometry(50+565,800,50,55)
+        self.conc_100_lineedit.setStyleSheet("""
+            .QLineEdit {
+                border: 0px solid black;
+                border-radius: 10px;
+                background-color: rgba(255, 0, 0, 0);
+                }
+                """)
+        self.conc_100_lineedit.show()
+
+
+
+
 
 
 
@@ -238,12 +278,12 @@ class View(PyQt4.QtGui.QMainWindow):
         self.severny_loc_button.clicked.emit(True)
 
 
-        self.time_month_slider.setSliderPosition(3)
-        self.time_month_slider.sliderReleased.emit(True)
+        self.time_month_slider.setSliderPosition(2)
+        self.time_month_slider.sliderReleased.emit()
 
 
         self.time_year_slider.setSliderPosition(1950)
-        self.time_year_slider.sliderReleased.emit(True)
+        self.time_year_slider.sliderReleased.emit()
 
 
 
@@ -315,23 +355,26 @@ class View(PyQt4.QtGui.QMainWindow):
 
         self.stats_plot.setGeometry(665,200,565,565)
 
-        pen_0 = PyQt4.QtGui.QPen(PyQt4.QtGui.QColor(200,200,200))
-        pen_1 = PyQt4.QtGui.QPen(PyQt4.QtGui.QColor(200,50,75))
+        pen_0 = PyQt4.QtGui.QPen(PyQt4.QtGui.QColor(238,50,50))
+        pen_1 = PyQt4.QtGui.QPen(PyQt4.QtGui.QColor(50,175,238))
 
-        self.stats_plot_item_roi_mar = pg.PlotDataItem()
-        self.stats_plot_item_roi_mar.setPen(pen_0)
+        self.stats_plot_item_roi_mar = pg.PlotDataItem(name = 'Mar')
+        self.stats_plot_item_roi_mar.setPen(pen_1)
 
         self.stats_plot.addItem(self.stats_plot_item_roi_mar)
 
-        self.stats_plot_item_roi_sep = pg.PlotDataItem()
+        self.stats_plot_item_roi_sep = pg.PlotDataItem(name = 'Sep')
         self.stats_plot_item_roi_sep.setPen(pen_0)
 
         self.stats_plot.addItem(self.stats_plot_item_roi_sep)
 
-        self.stats_plot_item_full = pg.PlotDataItem()
-        self.stats_plot_item_full.setPen(pen_1)
+        self.stats_plot.addLegend()
 
-        self.stats_plot.addItem(self.stats_plot_item_full)
+
+        #self.stats_plot_item_full = pg.PlotDataItem()
+        #self.stats_plot_item_full.setPen(pen_1)
+
+        #self.stats_plot.addItem(self.stats_plot_item_full)
 
         self.stats_plot.show()
 

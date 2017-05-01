@@ -74,6 +74,27 @@ class Model():
                             Npoints+=1
                 conc_time_series.append( sum/Npoints )
         else:
+
+
+            xdim, ydim = roi_conc_cube[0].shape[0], roi_conc_cube[0].shape[1]
+
+            seaice_conc_temptemp = self.seaice_conc[:,latmin:latmax, lonmin:lonmax]
+
+            for m in range(len(Month)):
+                for yr in range(0,N_years):
+                    index = yr*12 + Month[m]
+                    if m==0:
+                        time_arr.append( self.time[index] )
+                    sum=0.
+                    Npoints=0
+
+                    indices = np.where(seaice_conc_temptemp[index,:,:] > -0.1)
+                    seaice_conc_temp = seaice_conc_temptemp[index, indices[0], indices[1]]
+                    Npoints = seaice_conc_temp.shape[0]
+                    conc_time_series[m].append(np.mean(seaice_conc_temp))
+
+
+            '''
             xdim, ydim = roi_conc_cube[0].shape[0], roi_conc_cube[0].shape[1]
             for m in range(len(Month)):
                 for yr in range(0,N_years):
@@ -83,6 +104,8 @@ class Model():
                     sum=0.
                     Npoints=0
 
+
+
                     for x in range(xdim):
                         for y in range(ydim):
                             elem = roi_conc_cube[index,x,y] #roi_conc_cube[index][x][y]
@@ -91,6 +114,7 @@ class Model():
                                 Npoints+=1
                     conc_time_series[m].append( sum/Npoints )
                 #conc_time_series.append( roi_conc_cube[index].sum() / num_points )
+            '''
 
         #adjusted_time, conc_time_series = TS[0], TS[1]
         adjusted_time = time_arr - np.min(time_arr)
